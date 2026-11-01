@@ -107,7 +107,7 @@ kubectl -n voting create secret generic voting-db --from-literal=POSTGRES_PASSWO
 Remove-Variable plainForKubectl, dbPassword
 ```
 
-This example sends the value to the local `kubectl` process; use the course's approved secret handling approach. Kubernetes Secret values are encoded, not encrypted by that fact alone. Enable the cluster's recommended secret-at-rest controls and restrict access. The pipeline applies the YAML and waits for rollouts, but this blueprint implementation has not been executed against AKS.
+This example sends the value to the local `kubectl` process; use the course's approved secret handling approach. Kubernetes Secret values are encoded, not encrypted by that fact alone. Enable the cluster's recommended secret-at-rest controls and restrict access. The pipeline applies the YAML and waits for rollouts. The application was also validated on AKS using images from a successful CI build; see VALIDATION.md for the scope of that check.
 
 For the course demo, forward the internal services from a terminal:
 
@@ -136,7 +136,7 @@ Run these checks in order and save screenshots or short notes for the report:
 4. Check Python syntax with `python -m compileall vote worker result` and Compose configuration with `docker compose config`.
 5. After Azure DevOps is configured, record the pipeline run, image tags in ACR, and (only if approved/enabled) AKS pod/service status and browser results.
 
-Local Docker builds and the vote-to-results flow were validated on 1 November 2026; see VALIDATION.md for the recorded checks and limitations. Azure checks still require the separate manual setup above.
+Local Docker builds, CI image build/push, and the AKS vote-to-results flow were validated on 1 November 2026; see VALIDATION.md for the recorded checks and limitations. New accounts still require the manual setup above.
 
 ## Two-student work split
 
