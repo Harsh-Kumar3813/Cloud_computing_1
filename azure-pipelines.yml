@@ -10,6 +10,10 @@ trigger:
       - infra/k8s/**
       - azure-pipelines.yml
 
+variables:
+  # Service connection name only; credentials stay in Azure DevOps.
+  ACR_SERVICE_CONNECTION: sc-acr-cloud-voting
+
 parameters:
   - name: deployToAks
     displayName: Deploy to AKS (requires approved cluster setup)

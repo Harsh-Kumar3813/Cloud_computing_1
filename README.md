@@ -76,7 +76,7 @@ These are setup instructions only. This project has not signed in, created resou
 
 1. In Azure, confirm with the course/team owner which subscription and region to use, whether the account can create ACR/AKS resources, and what credit and expiry rules apply. Check current pricing and student-offer terms yourself before creating anything; neither credit eligibility nor zero cost is guaranteed.
 2. Create or select an Azure DevOps project and connect its pipeline to the GitHub repository. Select `azure-pipelines.yml` when asked for a pipeline YAML file.
-3. Configure an Azure DevOps **Docker Registry** service connection for the intended ACR. Set a pipeline variable `ACR_SERVICE_CONNECTION` to that connection's exact name. Do not put a registry password in YAML.
+3. Configure an Azure DevOps **Docker Registry** service connection for the intended ACR using workload identity federation (passwordless). The YAML expects the connection name `sc-acr-cloud-voting`; change `ACR_SERVICE_CONNECTION` in YAML if using another name. Limit the identity to `AcrPush` on the registry and authorize only this project's pipeline. Do not put a registry password in YAML.
 4. Create a pipeline and first run the **BuildAndPush** stage only after the service connection is ready. It builds `vote`, `worker`, and `result` with the Azure Pipelines build ID as the tag and pushes them to ACR.
 5. Confirm each image/tag in the ACR portal. That is the evidence that the build/push stage succeeded; no such result is claimed here.
 
