@@ -10,9 +10,11 @@ trigger:
       - infra/k8s/**
       - azure-pipelines.yml
 
-variables:
-  # Set RUN_AKS_DEPLOY to true only after the team is ready and approval checks exist.
-  RUN_AKS_DEPLOY: 'false'
+parameters:
+  - name: deployToAks
+    displayName: Deploy to AKS (requires approved cluster setup)
+    type: boolean
+    default: false
 
 stages:
   - stage: BuildAndPush
@@ -56,60 +58,61 @@ stages:
               tags: |
                 $(Build.BuildId)
 
-  - stage: DeployToAKS
-    displayName: Deploy to the course AKS cluster
-    dependsOn: BuildAndPush
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['RUN_AKS_DEPLOY'], 'true'))
-    jobs:
-      - deployment: DeployVotingApp
-        displayName: Apply the manifests after approval
-        environment: voting-aks-dev
-        pool:
-          vmImage: ubuntu-latest
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-                - bash: |
-                    set -euo pipefail
-                    if [ -z "$ACR_LOGIN_SERVER" ]; then
-                      echo "Set the ACR_LOGIN_SERVER pipeline variable."
-                      exit 1
-                    fi
-                    if [ -z "$IMAGE_TAG" ]; then
-                      echo "The pipeline build ID was not provided."
-                      exit 1
-                    fi
-                    if [[ ! "$ACR_LOGIN_SERVER" =~ ^[a-z0-9.-]+$ ]]; then
-                      echo "ACR_LOGIN_SERVER must be a registry login server such as myregistry.azurecr.io."
-                      exit 1
-                    fi
-                    sed -i "s|__ACR_LOGIN_SERVER__|$ACR_LOGIN_SERVER|g" infra/k8s/*.yaml
-                    sed -i "s|__IMAGE_TAG__|$IMAGE_TAG|g" infra/k8s/*.yaml
-                    if grep -R -nE '__ACR_LOGIN_SERVER__|__IMAGE_TAG__' infra/k8s; then
-                      echo "An image placeholder was not replaced."
-                      exit 1
-                    fi
-                  displayName: Fill in the registry and immutable build tag
-                  env:
-                    ACR_LOGIN_SERVER: $(ACR_LOGIN_SERVER)
-                    IMAGE_TAG: $(Build.BuildId)
+  - ${{ if eq(parameters.deployToAks, true) }}:
+    - stage: DeployToAKS
+      displayName: Deploy to the course AKS cluster
+      dependsOn: BuildAndPush
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      jobs:
+        - deployment: DeployVotingApp
+          displayName: Apply the manifests after approval
+          environment: voting-aks-dev
+          pool:
+            vmImage: ubuntu-latest
+          strategy:
+            runOnce:
+              deploy:
+                steps:
+                  - checkout: self
+                  - bash: |
+                      set -euo pipefail
+                      if [ -z "$ACR_LOGIN_SERVER" ]; then
+                        echo "Set the ACR_LOGIN_SERVER pipeline variable."
+                        exit 1
+                      fi
+                      if [ -z "$IMAGE_TAG" ]; then
+                        echo "The pipeline build ID was not provided."
+                        exit 1
+                      fi
+                      if [[ ! "$ACR_LOGIN_SERVER" =~ ^[a-z0-9.-]+$ ]]; then
+                        echo "ACR_LOGIN_SERVER must be a registry login server such as myregistry.azurecr.io."
+                        exit 1
+                      fi
+                      sed -i "s|__ACR_LOGIN_SERVER__|$ACR_LOGIN_SERVER|g" infra/k8s/*.yaml
+                      sed -i "s|__IMAGE_TAG__|$IMAGE_TAG|g" infra/k8s/*.yaml
+                      if grep -R -nE '__ACR_LOGIN_SERVER__|__IMAGE_TAG__' infra/k8s; then
+                        echo "An image placeholder was not replaced."
+                        exit 1
+                      fi
+                    displayName: Fill in the registry and immutable build tag
+                    env:
+                      ACR_LOGIN_SERVER: $(ACR_LOGIN_SERVER)
+                      IMAGE_TAG: $(Build.BuildId)
 
-                - task: KubernetesManifest@1
-                  displayName: Apply manifests and wait for rollout
-                  inputs:
-                    action: deploy
-                    connectionType: azureResourceManager
-                    azureSubscriptionConnection: $(AZURE_SERVICE_CONNECTION)
-                    azureResourceGroup: $(AKS_RESOURCE_GROUP)
-                    kubernetesCluster: $(AKS_CLUSTER_NAME)
-                    namespace: voting
-                    manifests: |
-                      infra/k8s/00-namespace.yaml
-                      infra/k8s/10-redis.yaml
-                      infra/k8s/20-postgres.yaml
-                      infra/k8s/30-vote.yaml
-                      infra/k8s/40-worker.yaml
-                      infra/k8s/50-result.yaml
-                    rolloutStatusTimeout: '300'
+                  - task: KubernetesManifest@1
+                    displayName: Apply manifests and wait for rollout
+                    inputs:
+                      action: deploy
+                      connectionType: azureResourceManager
+                      azureSubscriptionConnection: $(AZURE_SERVICE_CONNECTION)
+                      azureResourceGroup: $(AKS_RESOURCE_GROUP)
+                      kubernetesCluster: $(AKS_CLUSTER_NAME)
+                      namespace: voting
+                      manifests: |
+                        infra/k8s/00-namespace.yaml
+                        infra/k8s/10-redis.yaml
+                        infra/k8s/20-postgres.yaml
+                        infra/k8s/30-vote.yaml
+                        infra/k8s/40-worker.yaml
+                        infra/k8s/50-result.yaml
+                      rolloutStatusTimeout: '300'

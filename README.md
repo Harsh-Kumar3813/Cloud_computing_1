@@ -82,7 +82,7 @@ These are setup instructions only. This project has not signed in, created resou
 
 ## Stage 4 — Prepare AKS deployment (gated and opt-in)
 
-The `DeployToAKS` stage is designed for `main` only and has `RUN_AKS_DEPLOY: 'false'` by default. It will remain skipped until the team deliberately sets that pipeline variable to `true` and supplies the values below. Do not enable it until the course owner approves the target cluster and the team is ready to deploy.
+The `DeployToAKS` stage is designed for `main` only and has the boolean `deployToAks` run parameter set to `false` by default. It will remain skipped until the team deliberately sets that run parameter to `true` and supplies the values below. Do not enable it until the course owner approves the target cluster and the team is ready to deploy.
 
 Required Azure DevOps setup, to be supplied by the account owner:
 
@@ -95,7 +95,7 @@ Create the Azure DevOps environment named `voting-aks-dev` referenced by the dep
 | `AKS_CLUSTER_NAME` | Approved AKS cluster name. |
 | `ACR_LOGIN_SERVER` | Registry hostname such as `example.azurecr.io` (hostname only, no image path). |
 | `ACR_SERVICE_CONNECTION` | Docker Registry service connection used by the image build stage. |
-| `RUN_AKS_DEPLOY` | Keep `false` during setup; set to `true` only when an approved deployment is intended. |
+| `deployToAks` (run parameter) | Keep `false` during setup; select `true` only when an approved deployment is intended. |
 
 Before an actual deployment, the cluster administrator must ensure the AKS kubelet identity can pull from ACR (or provide an approved image-pull credential method), and that the Kubernetes service connection has the required permissions. Create the namespace first through the pipeline manifests. Create the database password Secret in the `voting` namespace using a secure secret mechanism approved by the course owner; never store its value in Git or pipeline YAML. Example for a local `kubectl` session after connecting to an approved cluster:
 
