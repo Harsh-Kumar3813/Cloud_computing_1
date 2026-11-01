@@ -1,0 +1,115 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - vote/**
+      - worker/**
+      - result/**
+      - infra/k8s/**
+      - azure-pipelines.yml
+
+variables:
+  # Set RUN_AKS_DEPLOY to true only after the team is ready and approval checks exist.
+  RUN_AKS_DEPLOY: 'false'
+
+stages:
+  - stage: BuildAndPush
+    displayName: Build and push the three app images
+    jobs:
+      - job: BuildImages
+        displayName: Build vote, worker, and results
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: Docker@2
+            displayName: Build and push vote
+            inputs:
+              command: buildAndPush
+              containerRegistry: $(ACR_SERVICE_CONNECTION)
+              repository: vote
+              Dockerfile: $(Build.SourcesDirectory)/vote/Dockerfile
+              buildContext: $(Build.SourcesDirectory)/vote
+              tags: |
+                $(Build.BuildId)
+
+          - task: Docker@2
+            displayName: Build and push worker
+            inputs:
+              command: buildAndPush
+              containerRegistry: $(ACR_SERVICE_CONNECTION)
+              repository: worker
+              Dockerfile: $(Build.SourcesDirectory)/worker/Dockerfile
+              buildContext: $(Build.SourcesDirectory)/worker
+              tags: |
+                $(Build.BuildId)
+
+          - task: Docker@2
+            displayName: Build and push results
+            inputs:
+              command: buildAndPush
+              containerRegistry: $(ACR_SERVICE_CONNECTION)
+              repository: result
+              Dockerfile: $(Build.SourcesDirectory)/result/Dockerfile
+              buildContext: $(Build.SourcesDirectory)/result
+              tags: |
+                $(Build.BuildId)
+
+  - stage: DeployToAKS
+    displayName: Deploy to the course AKS cluster
+    dependsOn: BuildAndPush
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['RUN_AKS_DEPLOY'], 'true'))
+    jobs:
+      - deployment: DeployVotingApp
+        displayName: Apply the manifests after approval
+        environment: voting-aks-dev
+        pool:
+          vmImage: ubuntu-latest
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - bash: |
+                    set -euo pipefail
+                    if [ -z "$ACR_LOGIN_SERVER" ]; then
+                      echo "Set the ACR_LOGIN_SERVER pipeline variable."
+                      exit 1
+                    fi
+                    if [ -z "$IMAGE_TAG" ]; then
+                      echo "The pipeline build ID was not provided."
+                      exit 1
+                    fi
+                    if [[ ! "$ACR_LOGIN_SERVER" =~ ^[a-z0-9.-]+$ ]]; then
+                      echo "ACR_LOGIN_SERVER must be a registry login server such as myregistry.azurecr.io."
+                      exit 1
+                    fi
+                    sed -i "s|__ACR_LOGIN_SERVER__|$ACR_LOGIN_SERVER|g" infra/k8s/*.yaml
+                    sed -i "s|__IMAGE_TAG__|$IMAGE_TAG|g" infra/k8s/*.yaml
+                    if grep -R -nE '__ACR_LOGIN_SERVER__|__IMAGE_TAG__' infra/k8s; then
+                      echo "An image placeholder was not replaced."
+                      exit 1
+                    fi
+                  displayName: Fill in the registry and immutable build tag
+                  env:
+                    ACR_LOGIN_SERVER: $(ACR_LOGIN_SERVER)
+                    IMAGE_TAG: $(Build.BuildId)
+
+                - task: KubernetesManifest@1
+                  displayName: Apply manifests and wait for rollout
+                  inputs:
+                    action: deploy
+                    connectionType: azureResourceManager
+                    azureSubscriptionConnection: $(AZURE_SERVICE_CONNECTION)
+                    azureResourceGroup: $(AKS_RESOURCE_GROUP)
+                    kubernetesCluster: $(AKS_CLUSTER_NAME)
+                    namespace: voting
+                    manifests: |
+                      infra/k8s/00-namespace.yaml
+                      infra/k8s/10-redis.yaml
+                      infra/k8s/20-postgres.yaml
+                      infra/k8s/30-vote.yaml
+                      infra/k8s/40-worker.yaml
+                      infra/k8s/50-result.yaml
+                    rolloutStatusTimeout: '300'
