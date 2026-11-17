@@ -1,4 +1,4 @@
-# Cloud Voting Application — Phase 1
+# Cloud Voting Application - Phase 1
 
 A small, beginner-friendly Cloud Computing course project. It follows the five-service architecture used by Docker's sample voting application while keeping the implementation and cloud scope intentionally small.
 
@@ -52,7 +52,7 @@ The source is a small original implementation of the same architecture, not a co
 
 The referenced folder is a deployment guide (README plus a self-hosted-agent guide) that points readers to the separate Docker sample application. This project includes its own small Python services so the course team can run and explain the full five-service flow from this repository. The guide's self-hosted Azure VM agent, Argo CD setup, image-update script, and public NodePort exposure are not included. Here, Azure Pipelines builds the three application images and the AKS stage is gated off by default; AKS services stay internal and a demo can use port forwarding. Redis and PostgreSQL remain part of the architecture, but are base images rather than custom builds.
 
-## Stage 1 — Run the application locally
+## Stage 1 - Run the application locally
 
 Requirements: Docker Desktop (or Docker Engine with the Compose plugin), Git, and a terminal. No Azure account is needed for this stage.
 
@@ -64,13 +64,13 @@ Requirements: Docker Desktop (or Docker Engine with the Compose plugin), Git, an
 
 Expected observation: the vote page accepts only Cats or Dogs; the worker logs stored votes; the results totals change. Try multiple votes and record what happens if Redis or PostgreSQL is unavailable.
 
-## Stage 2 — Put source and manifests in GitHub
+## Stage 2 - Put source and manifests in GitHub
 
 1. Create a private or course-approved GitHub repository for this project and add the contents of this folder.
 2. Check `git status` and confirm `.env` is not staged. Do not commit passwords, tokens, subscription IDs, or personal account details.
 3. Push the `main` branch. Keep code, Dockerfiles, pipeline YAML, and Kubernetes manifests together so the course team can review each change.
 
-## Stage 3 — Prepare Azure DevOps and ACR (manual account setup)
+## Stage 3 - Prepare Azure DevOps and ACR (manual account setup)
 
 These are setup instructions only. This project has not signed in, created resources, or verified student-credit eligibility or prices.
 
@@ -80,7 +80,7 @@ These are setup instructions only. This project has not signed in, created resou
 4. Create a pipeline and first run the **BuildAndPush** stage only after the service connection is ready. It builds `vote`, `worker`, and `result` with the Azure Pipelines build ID as the tag and pushes them to ACR.
 5. Confirm each image/tag in the ACR portal. That is the evidence that the build/push stage succeeded; no such result is claimed here.
 
-## Stage 4 — Prepare AKS deployment (gated and opt-in)
+## Stage 4 - Prepare AKS deployment (gated and opt-in)
 
 The `DeployToAKS` stage is designed for `main` only and has the boolean `deployToAks` run parameter set to `false` by default. It will remain skipped until the team deliberately sets that run parameter to `true` and supplies the values below. Do not enable it until the course owner approves the target cluster and the team is ready to deploy.
 
@@ -176,7 +176,7 @@ Treat these as flexible work blocks, not deadline guarantees. Keep quiz/assignme
 - The default pipeline deploy stage is gated but not an authorization system. Protect the Azure DevOps environment with course-approved approvals/checks and restrict service connection permissions before enabling it.
 - The Kubernetes services are internal. Public ingress, TLS, and hardening are deliberately outside Phase 1.
 
-## Optional Phase 2 — Argo CD
+## Optional Phase 2 - Argo CD
 
 After Phase 1 is complete, explore Argo CD as a separate extension: point it at the Git repository's Kubernetes manifests, observe reconciliation, then change a manifest and capture how the cluster follows Git. Agree on a course-approved cluster and cleanup plan first. Do not add Argo CD to Phase 1 acceptance criteria.
 
