@@ -185,5 +185,3 @@ After Phase 1 is complete, explore Argo CD as a separate extension: point it at 
 - [Lloyd Theophilus DevOps Project 37](https://github.com/lloyd-theophilus/DevOps-Projects/tree/master/DevOps-Project-37) — reference for the general project flow and selected configuration concepts; not a request to reproduce the full repository.
 - [Docker sample voting application](https://github.com/dockersamples/example-voting-app) — reference for the vote/Redis/worker/PostgreSQL/results architecture.
 - [Docker@2 task reference](https://learn.microsoft.com/azure/devops/pipelines/tasks/reference/docker-v2?view=azure-pipelines) and [KubernetesManifest@1 task reference](https://learn.microsoft.com/azure/devops/pipelines/tasks/reference/kubernetes-manifest-v1?view=azure-pipelines) — Azure Pipelines task documentation.
-
-testing
