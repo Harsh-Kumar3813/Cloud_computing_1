@@ -1,5 +1,6 @@
 """Small voting web service. Votes are queued in Redis for the worker."""
 
+import uuid
 import json
 import os
 
@@ -13,6 +14,7 @@ votes = redis.Redis.from_url(
     os.environ.get("REDIS_URL", "redis://redis:6379/0"),
     decode_responses=True,
     socket_connect_timeout=2,
+    socket_timeout=2,
 )
 CHOICES = ("Cats", "Dogs")
 
@@ -28,7 +30,7 @@ def submit_vote():
     if choice not in CHOICES:
         return "Choose Cats or Dogs.", 400
     try:
-        votes.rpush("votes", json.dumps({"choice": choice}))
+        votes.rpush("votes", json.dumps({"id": str(uuid.uuid4()), "choice": choice}))
     except redis.RedisError:
         app.logger.exception("Could not queue the vote")
         return "The vote queue is unavailable. Please try again.", 503
@@ -38,6 +40,11 @@ def submit_vote():
 @app.get("/thanks")
 def thanks():
     return page("Vote received", '''<div class="eyebrow">Choice received</div><h1>Thanks for weighing in.</h1><p>Your vote is on its way to the results. It may take a moment to appear.</p><a class="action" href="http://localhost:8081">View results →</a><a class="secondary" href="/">Back to voting</a>''')
+
+
+@app.get("/livez")
+def live():
+    return "ok", 200
 
 
 @app.get("/healthz")

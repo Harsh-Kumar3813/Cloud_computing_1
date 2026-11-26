@@ -2,9 +2,10 @@ services:
   vote:
     build: ./vote
     environment:
+      POLL_TITLE: ${POLL_TITLE:-The friendly vote}
       REDIS_URL: redis://redis:6379/0
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     depends_on:
       redis:
         condition: service_healthy
@@ -35,13 +36,14 @@ services:
   result:
     build: ./result
     environment:
+      POLL_TITLE: ${POLL_TITLE:-The friendly vote}
       POSTGRES_HOST: db
       POSTGRES_PORT: "5432"
       POSTGRES_DB: voting
       POSTGRES_USER: voting_app
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copy .env.example to .env and set a local password}
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     depends_on:
       db:
         condition: service_healthy
@@ -55,6 +57,9 @@ services:
 
   redis:
     image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -78,4 +83,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  redis-data:
   postgres-data:

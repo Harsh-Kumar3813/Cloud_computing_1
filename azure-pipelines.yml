@@ -9,6 +9,8 @@ trigger:
       - result/**
       - infra/k8s/**
       - azure-pipelines.yml
+      - tests/**
+      - docker-compose.yml
 
 variables:
   # Service connection name only; credentials stay in Azure DevOps.
@@ -29,6 +31,13 @@ stages:
         pool:
           vmImage: ubuntu-latest
         steps:
+          - bash: |
+              set -euo pipefail
+              export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+              project="courseaudit$(Build.BuildId)"
+              docker compose -p "$project" up --build -d --wait
+              python3 tests/acceptance.py --project "$project" --output "$(Agent.TempDirectory)/voting-tests"
+            displayName: Verify isolated vote processing and outage recovery
           - task: Docker@2
             displayName: Build and push vote
             inputs:

@@ -66,6 +66,11 @@ def home():
     return page("Results", f'<div class="eyebrow">The community verdict</div><h1>Every vote counts.</h1><p>{message}</p><div class="grid">{cards}</div><div class="notice">Results reflect processed votes. <a href="/">Refresh results</a> to see the latest count.</div><a class="action" href="http://localhost:8080">Cast a vote →</a>')
 
 
+@app.get("/livez")
+def live():
+    return "ok", 200
+
+
 @app.get("/healthz")
 def health():
     try:
