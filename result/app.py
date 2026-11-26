@@ -27,6 +27,7 @@ def ensure_table():
     for _ in range(30):
         try:
             with connect_to_database() as connection:
+                connection.execute("SELECT pg_advisory_xact_lock(8287)")
                 connection.execute(
                     """
                     CREATE TABLE IF NOT EXISTS votes (
@@ -63,7 +64,12 @@ def home():
         style = "" if choice == "Cats" else "dog"
         cards += f'<section class="card {style}"><span class="icon" aria-hidden="true">{icon}</span><h2>Team {choice}</h2><div class="count">{percentage:.0f}%</div><div class="track" aria-hidden="true"><div class="bar" style="width:{percentage:.2f}%"></div></div><p>{counts[choice]} votes</p></section>'
     message = "No votes yet. Be the first to choose a side." if not total_votes else f"{total_votes} votes counted. Every choice adds to the story."
-    return page("Results", f'<div class="eyebrow">The community verdict</div><h1>Every vote counts.</h1><p>{message}</p><div class="grid">{cards}</div><div class="notice">Results reflect processed votes. <a href="/">Refresh results</a> to see the latest count.</div><a class="action" href="http://localhost:8080">Cast a vote →</a>')
+    return page("Results", f'<div class="eyebrow">The community verdict</div><h1>Every vote counts.</h1><p>{message}</p><div class="grid">{cards}</div><div class="notice">Results reflect processed votes. <a href="/">Refresh results</a> to see the latest count.</div><a class="action" href="{{{{ vote_url }}}}">Cast a vote →</a>', vote_url=os.getenv('VOTE_URL', 'http://localhost:8080'))
+
+
+@app.get("/livez")
+def live():
+    return "ok", 200
 
 
 @app.get("/healthz")

@@ -2,8 +2,11 @@ trigger:
   branches:
     include:
       - main
+      - audit/voting-20261126
   paths:
     include:
+      - tests/**
+      - docker-compose.yml
       - vote/**
       - worker/**
       - result/**
@@ -29,6 +32,18 @@ stages:
         pool:
           vmImage: ubuntu-latest
         steps:
+          - bash: |
+              set -euo pipefail
+              export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+              export COMPOSE_PROJECT_NAME="votingauditci$(Build.BuildId)"
+              trap 'docker compose down' EXIT
+              docker compose up -d --build --wait
+              python3 tests/smoke.py
+              python3 tests/experiment.py --project "$COMPOSE_PROJECT_NAME" --out "$(Build.ArtifactStagingDirectory)/validation"
+            displayName: Test the complete Compose vote flow
+          - publish: $(Build.ArtifactStagingDirectory)/validation
+            artifact: validation
+            displayName: Preserve Compose test results
           - task: Docker@2
             displayName: Build and push vote
             inputs:

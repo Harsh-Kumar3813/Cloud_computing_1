@@ -13,13 +13,14 @@ votes = redis.Redis.from_url(
     os.environ.get("REDIS_URL", "redis://redis:6379/0"),
     decode_responses=True,
     socket_connect_timeout=2,
+    socket_timeout=2,
 )
 CHOICES = ("Cats", "Dogs")
 
 
 @app.get("/")
 def home():
-    return page("Cast your vote", '''<div class="eyebrow">The great companion debate</div><h1>Small choice.<br>Big personality.</h1><p>Quiet charm or boundless energy? Pick your favourite companion and see where everyone stands.</p><form method="post" action="/vote" class="grid"><button class="card" name="choice" value="Cats"><span class="icon" aria-hidden="true">🐈</span><h2>Team Cats</h2><p>Independent spirits. Expert nappers.</p><span class="action">Vote for Cats →</span></button><button class="card" name="choice" value="Dogs"><span class="icon" aria-hidden="true">🐕</span><h2>Team Dogs</h2><p>Loyal hearts. Everyday adventurers.</p><span class="action">Vote for Dogs →</span></button></form><p class="muted">One click submits your choice. No account needed.</p><a class="secondary" href="http://localhost:8081">See the results →</a>''')
+    return page("Cast your vote", '''<div class="eyebrow">The great companion debate</div><h1>Small choice.<br>Big personality.</h1><p>Quiet charm or boundless energy? Pick your favourite companion and see where everyone stands.</p><form method="post" action="/vote" class="grid"><button class="card" name="choice" value="Cats"><span class="icon" aria-hidden="true">🐈</span><h2>Team Cats</h2><p>Independent spirits. Expert nappers.</p><span class="action">Vote for Cats →</span></button><button class="card" name="choice" value="Dogs"><span class="icon" aria-hidden="true">🐕</span><h2>Team Dogs</h2><p>Loyal hearts. Everyday adventurers.</p><span class="action">Vote for Dogs →</span></button></form><p class="muted">One click submits your choice. No account needed.</p><a class="secondary" href="{{ result_url }}">See the results →</a>''', result_url=os.getenv('RESULT_URL', 'http://localhost:8081'))
 
 
 @app.post("/vote")
@@ -37,7 +38,12 @@ def submit_vote():
 
 @app.get("/thanks")
 def thanks():
-    return page("Vote received", '''<div class="eyebrow">Choice received</div><h1>Thanks for weighing in.</h1><p>Your vote is on its way to the results. It may take a moment to appear.</p><a class="action" href="http://localhost:8081">View results →</a><a class="secondary" href="/">Back to voting</a>''')
+    return page("Vote received", '''<div class="eyebrow">Choice received</div><h1>Thanks for weighing in.</h1><p>Your vote is on its way to the results. It may take a moment to appear.</p><a class="action" href="{{ result_url }}">View results →</a><a class="secondary" href="/">Back to voting</a>''', result_url=os.getenv('RESULT_URL', 'http://localhost:8081'))
+
+
+@app.get("/livez")
+def live():
+    return "ok", 200
 
 
 @app.get("/healthz")

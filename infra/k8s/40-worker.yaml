@@ -41,6 +41,16 @@ spec:
                 secretKeyRef:
                   name: voting-db
                   key: POSTGRES_PASSWORD
+          ports:
+            - name: health
+              containerPort: 8082
+          readinessProbe:
+            httpGet: {path: /healthz, port: health}
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /livez, port: health}
+            periodSeconds: 10
+            initialDelaySeconds: 75
           resources:
             requests:
               cpu: 50m
